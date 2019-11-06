@@ -27,8 +27,31 @@
 <body>
 	<div class="reveal">
 		<div class="slides">
+			<section>
+				<h4>Daniel Paulus, Senior Software Engineer at Sauce-RDC</h4>
+				<img src="img/saucebot_desk.png" style="width:250px;" />
+				<aside data-markdown class="notes">
+					- I am Daniel, I was an AirForce Officer before joining Sauce and have a family with 4 kids here, I
+					study philosophy on the side and love challenging things
+					- I work on reverse engineering iOS and figuring out tricky problems with real devices.
+					- I work with customer Apps, mobile features, testing frameworks, java, go, reverse engineering
+					things
+					- I was part of an internal project to run all real devices on linux server whereas before we had
+					them
+					on mac minis
+					- so I pretty much know every detail about how iOS devices communicate with MAC OS
+					- So let's start with a small history about today's project
+				</aside>
+			</section>
 			<section data-background-video-loop="loop" data-background-video="videos/sauce_rdc.mp4">
-				dude
+				<aside data-markdown class="notes">
+					RDC live testing and automated
+					- One of my first tasks when I got into RDC was to make live testing faster, it was low FPS
+					- which is a servie we provide that lets customers remote control a real device
+					- my manager said "its slow, see if you can make it faster"
+					- i looked into options and among others found..
+
+				</aside>
 			</section>
 			<section style="margin-left:50%" data-background-video-loop="loop"
 				data-background-video="videos/activate_screen_mirroring.mp4">
@@ -36,11 +59,24 @@
 
 
 				<aside data-markdown class="notes">
-					Oh hey, these are some notes. They'll be hidden in your presentation, but you can see them if you
-					open the speaker notes window (hit »S« on your keyboard).
+					- at the time we thought it probably has DRM built in or some other encryption, so very hard
+					- and I happened to stumple upon a cool internal private API that let me make live testing a lot
+					faster without quicktime so we decided to move on
 				</aside>
 			</section>
-			<section data-background-video="video.mp4,video.webm"></section>
+			<section>
+
+				<h2>BUT..</h2>
+
+
+				<p class="fragment">googling around, you will sooner or later find this video:</p>
+				<iframe class="fragment" width="560" height="315" src="https://www.youtube.com/embed/A9gqzn3XcDM"
+					frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+					allowfullscreen></iframe>
+
+				<p class="fragment  roll-in">no source code 😭</p>
+			</section>
+
 		</div>
 	</div>
 
@@ -56,7 +92,9 @@
 				{ src: 'plugin/markdown/markdown.js' },
 				{ src: 'plugin/notes/notes.js', async: true },
 				{ src: 'plugin/highlight/highlight.js', async: true }
-			]
+			],
+			//turn this on so npm reloads to the current slide instead of always starting at slide 1
+			history: true
 		});
 	</script>
 </body>

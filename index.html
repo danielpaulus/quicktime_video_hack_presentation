@@ -22,6 +22,7 @@
 		link.href = window.location.search.match(/print-pdf/gi) ? 'css/print/pdf.css' : 'css/print/paper.css';
 		document.getElementsByTagName('head')[0].appendChild(link);
 	</script>
+	<script type="text/javascript" src="js/hexy.js"></script>
 </head>
 
 <body>
@@ -76,7 +77,101 @@
 
 				<p class="fragment  roll-in">no source code 😭</p>
 			</section>
+			<section>
+				<section>
+					<p>So basically we have two attack vectors for finding out how this works:</p>
+				</section>
+				<section>
+					<p>1. Use a disassembler and try to understand
+						using static analysis and a debugger</p>
+					<pre
+						style="white-space: pre-wrap;">/System/Library/Frameworks/CoreMediaIO.framework/Versions/A/Resources/iOSScreenCapture.plugin/Contents/Resources/iOSScreenCaptureAssistant</pre>
+				</section>
 
+				<section>
+					2. Get a dump of USB communication, and just try to figure out the binary format with it
+					<pre><code data-trim>sudo ifconfig XHC20 up</code></pre>
+					<img style="width:150px" src="img/1024px-Wireshark_icon.png" />
+					<aside data-markdown class="notes">
+						- Using this command you can get a dump of everything that is going on on your USB device and
+						use all the cool wireshark filters
+					</aside>
+				</section>
+				<section>
+					Lets assume you want to reverse engineer a REST API, what would you rather do?
+				</section>
+				<section>
+					Read complicated JavaScript code...
+					<pre
+						style="white-space: pre-wrap;">var _0x3589=['ARTIST','childNodes','nodeValue','</td><td>','TITLE','</td></tr>','demo','innerHTML','onreadystatechange','readyState','status','open','GET','cd_catalog.xml','send','responseXML','getElementsByTagName','length','<tr><td>'];(function(_0x307c39,_0x57eca5){var _0x4fb85c=function(_0xd89e6d){while(--_0xd89e6d){_0x307c39['push'](_0x307c39['shift']());}};_0x4fb85c(++_0x57eca5);}(_0x3589,0xec));var _0x50c1=function(_0x319890,_0x3940ec){_0x319890=_0x319890-0x0;var _0x4f50ff=_0x3589[_0x319890];return _0x4f50ff;};function loadXMLDoc(){var _0x1ec44a=new XMLHttpRequest();_0x1ec44a[_0x50c1('0x0')]=function(){if(this[_0x50c1('0x1')]==0x4&&this[_0x50c1('0x2')]==0xc8){myFunction(this);}};_0x1ec44a[_0x50c1('0x3')](_0x50c1('0x4'),_0x50c1('0x5'),!![]);_0x1ec44a[_0x50c1('0x6')]();}function myFunction(_0x18fd9c){var _0x4bbd7b;var _0x77fb02=_0x18fd9c[_0x50c1('0x7')];var _0x50a728='<tr><th>Artist</th><th>Title</th></tr>';var _0x301231=_0x77fb02[_0x50c1('0x8')]('CD');for(_0x4bbd7b=0x0;_0x4bbd7b<_0x301231[_0x50c1('0x9')];_0x4bbd7b++){_0x50a728+=_0x50c1('0xa')+_0x301231[_0x4bbd7b][_0x50c1('0x8')](_0x50c1('0xb'))[0x0][_0x50c1('0xc')][0x0][_0x50c1('0xd')]+_0x50c1('0xe')+_0x301231[_0x4bbd7b][_0x50c1('0x8')](_0x50c1('0xf'))[0x0][_0x50c1('0xc')][0x0][_0x50c1('0xd')]+_0x50c1('0x10');}document['getElementById'](_0x50c1('0x11'))[_0x50c1('0x12')]=_0x50a728;}</pre>
+				</section>
+				<section>
+					Or look at network messages
+					<video data-autoplay src="videos/http_requests.mp4"></video>
+
+				</section>
+				<section>
+					Also, I do not have enough money to get IDA Pro 😭😭...
+					...so I tried option two
+				</section>
+			</section>
+			<section>
+				<section>
+					We see strings, which is good but they make no sense 🤔
+					<pre style="font-size:0.4em!important; font-family: 'Sans Mono', 'Consolas', 'Courier', monospace"><code  data-trim>
+							00000000  10 00 00 00 67 6e 69 70  00 00 00 00 01 00 00 00  |....gnip........|
+							00000010  10 00 00 00 67 6e 69 70  00 00 00 00 01 00 00 00  |....gnip........|
+							00000020  24 00 00 00 63 6e 79 73  01 00 00 00 00 00 00 00  |$...cnys........|
+							00000030  61 70 77 63 40 ae d5 18  01 00 00 00 b0 57 8d 19  |apwc@........W..|
+							00000040  01 00 00 00 44 00 00 00  63 6e 79 73 40 15 e1 5c  |....D...cnys@..\|
+							00000050  fb 7f 00 00 74 6d 66 61  90 4d af 18 01 00 00 00  |....tmfa.M......|
+							00000060  00 00 00 00 00 70 e7 40  6d 63 70 6c 4c 00 00 00  |.....p.@mcplL...|
+							00000070  04 00 00 00 01 00 00 00  04 00 00 00 02 00 00 00  |................|
+							00000080
+					</code></pre>
+
+
+				</section>
+				<section>
+					<h4>When a network connections sends you an endless stream of bytes, how do you know when a message
+						is complete?
+					</h4>
+					<ol>
+						<li>Fixed Length</li>
+						<li> 4 byte Int containing length + Payload of that length</li>
+						<li> Delimiter-based messages</li>
+					</ol>
+					<aside>
+						whenever you call tcpConnection.Read() you never know how many bytes you will receive, this is
+						true for any programming language
+					</aside>
+				</section>
+				<section>
+					So let's try fixed length.. no, delimiter based? not really.. 4 byte length.. hmm
+				</section>
+			</section>
+
+			<section>
+				<a href="https://en.wikipedia.org/wiki/Endianness">Endianness</a>
+				Sometimes network protocols use LittleEndian, sometimes they use BigEndian.
+				So wait a second... Does that mean that..
+				<pre><code data-trim>
+						//Async Packet types
+						const (
+							AsynPacketMagic uint32 = 0x6173796E //nysa - asyn
+							FEED            uint32 = 0x66656564 //deef - feed  
+							TJMP            uint32 = 0x746A6D70 //pmjt - tjmp
+							SRAT            uint32 = 0x73726174 
+							SPRP            uint32 = 0x73707270 // Set Property
+							TBAS            uint32 = 0x74626173 //TimeBase 
+							RELS            uint32 = 0x72656C73
+							HPD1            uint32 = 0x68706431 //hpd1 - 1dph | For specifying/requesting the video format
+							HPA1            uint32 = 0x68706131 //hpa1 - 1aph | For specifying/requesting the audio format
+							NEED            uint32 = 0x6E656564 //need - deen
+							EAT             uint32 = 0x65617421 //contains audio sbufs
+
+						)</code></pre>
+			</section>
 		</div>
 	</div>
 

@@ -427,10 +427,39 @@
 					</aside>
 				</section>
 				<section>
-					<h3>Working with networking and byte slices is soooo cool</h3>
+					<h3>Working with byte slices is soooo cool</h3>
+					<pre style="font-size:0.4em!important;"><code class="go" data-noescape data-trim>
+					responseBytes := make([]byte, 24)
+					binary.LittleEndian.PutUint32(responseBytes, 24)
+					binary.LittleEndian.PutUint32(responseBytes[4:], ReplyPacketMagic)
+					binary.LittleEndian.PutUint64(responseBytes[8:], sp.CorrelationID)
+					binary.LittleEndian.PutUint32(responseBytes[16:], 0)
+					binary.LittleEndian.PutUint32(responseBytes[20:], 0) 
+					//or
+					responseBytes := make([]byte, 60)
+					length := writePayload(responseBytes[24:])
+					writeHeader(responseBytes[:24], length)
+				</code></pre>
 				</section>
 				<section>
 					<h3>You can even write and read structs directly from byte streams (like in C)</h3>
+					<pre style="font-size:0.4em!important;"><code class="go" data-noescape data-trim>
+					type CMTime struct {
+						CMTimeValue uint64 
+						CMTimeScale uint32 
+						CMTimeFlags uint32 
+						CMTimeEpoch uint64
+					}
+					func NewCMTimeFromBytes(data []byte) (CMTime, error) {
+						r := bytes.NewReader(data)
+						var cmTime CMTime
+						err := binary.Read(r, binary.LittleEndian, &cmTime)
+						if err != nil {
+							return cmTime, err
+						}
+						return cmTime, nil
+					}
+				</code></pre>
 				</section>
 			</section>
 			<section>
@@ -441,7 +470,7 @@
 					I recommend using golden file like approaches for the codec
 				</section>
 				<section>
-					<pre style="font-size:0.4em!important;"><code class="golang" data-noescape data-trim>
+					<pre style="font-size:0.4em!important;"><code class="go" data-noescape data-trim>
 						func TestTbas(t *testing.T) {
 							dat, err := ioutil.ReadFile("fixtures/asyn-tbas")
 							if err != nil {
@@ -468,6 +497,7 @@
 				<h3>Reverse Engineering helps you be creative</h3>
 				<ul>
 					<li>Strategies for finding meaning in HexDumps</li>
+					<li>Writting clean, unit tested application code without knowing the end result</li>
 					<li>Networking basics</li>
 					<li>H264</li>
 					<li>GoUSB coding</li>

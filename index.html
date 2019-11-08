@@ -130,7 +130,7 @@
 				</section>
 				<section>
 					<h3>Similar Problem, different Perspective</h3>
-					Lets assume you want to reverse engineer a REST API, what would you rather do?
+					Let's assume you want to reverse engineer a REST API, what would you rather do?
 				</section>
 				<section>
 					Read complicated JavaScript code...
@@ -138,13 +138,9 @@
 						style="white-space: pre-wrap;">var _0x3589=['ARTIST','childNodes','nodeValue','</td><td>','TITLE','</td></tr>','demo','innerHTML','onreadystatechange','readyState','status','open','GET','cd_catalog.xml','send','responseXML','getElementsByTagName','length','<tr><td>'];(function(_0x307c39,_0x57eca5){var _0x4fb85c=function(_0xd89e6d){while(--_0xd89e6d){_0x307c39['push'](_0x307c39['shift']());}};_0x4fb85c(++_0x57eca5);}(_0x3589,0xec));var _0x50c1=function(_0x319890,_0x3940ec){_0x319890=_0x319890-0x0;var _0x4f50ff=_0x3589[_0x319890];return _0x4f50ff;};function loadXMLDoc(){var _0x1ec44a=new XMLHttpRequest();_0x1ec44a[_0x50c1('0x0')]=function(){if(this[_0x50c1('0x1')]==0x4&&this[_0x50c1('0x2')]==0xc8){myFunction(this);}};_0x1ec44a[_0x50c1('0x3')](_0x50c1('0x4'),_0x50c1('0x5'),!![]);_0x1ec44a[_0x50c1('0x6')]();}function myFunction(_0x18fd9c){var _0x4bbd7b;var _0x77fb02=_0x18fd9c[_0x50c1('0x7')];var _0x50a728='<tr><th>Artist</th><th>Title</th></tr>';var _0x301231=_0x77fb02[_0x50c1('0x8')]('CD');for(_0x4bbd7b=0x0;_0x4bbd7b<_0x301231[_0x50c1('0x9')];_0x4bbd7b++){_0x50a728+=_0x50c1('0xa')+_0x301231[_0x4bbd7b][_0x50c1('0x8')](_0x50c1('0xb'))[0x0][_0x50c1('0xc')][0x0][_0x50c1('0xd')]+_0x50c1('0xe')+_0x301231[_0x4bbd7b][_0x50c1('0x8')](_0x50c1('0xf'))[0x0][_0x50c1('0xc')][0x0][_0x50c1('0xd')]+_0x50c1('0x10');}document['getElementById'](_0x50c1('0x11'))[_0x50c1('0x12')]=_0x50a728;}</pre>
 				</section>
 				<section>
-					Or look at network messages
+					Or look at HTTP-requests and replay them?
 					<video data-autoplay src="videos/http_requests.mp4"></video>
 
-				</section>
-				<section>
-					Also, I do not have enough money to get IDA Pro 😭😭...
-					...so I tried option two
 				</section>
 			</section>
 			<section>
@@ -179,15 +175,15 @@
 
 				</section>
 				<section>
-					<h4>When a network connections sends you an endless stream of bytes, how do you know when a message
+					<h4>When a network connection sends you an endless stream of bytes, how do you know when a message
 						is complete?
 					</h4>
 					<ol>
-						<li>Fixed Length</li>
+						<li>Fixed length</li>
 						<li> Delimiter-based messages</li>
-						<li> 4 byte Int containing length + Payload of that length</li>
+						<li> 4 byte int containing length + payload of that length</li>
 					</ol>
-					<aside data-markdown class="">
+					<aside data-markdown class="notes">
 						whenever you call tcpConnection.Read() you never know how many bytes you will receive, this is
 						true for any programming language
 					</aside>
@@ -223,7 +219,6 @@
 								00000070  04 00 00 00 01 00 00 00  04 00 00 00 02 00 00 00  |................|
 								00000080
 						</code></pre>
-					<p class="fragment">Good example, log messages delimited with "\n"</p>
 					<aside data-markdown="" class="notes">
 						- also it seems like unreasonable to assume delimiter based, I guess for video decoding it's
 						nice to know beforehand how big of a buffer you need for the upcoming data
@@ -275,8 +270,8 @@
 					<iframe width=100% height="300px" src="https://play.golang.org/p/2Jv9okeAaUr"></iframe>
 				</section>
 				<section>
-					<a href="https://en.wikipedia.org/wiki/Endianness">Endianness</a>
-					🤯 Suddenly it all makes sense!
+					<a href="https://en.wikipedia.org/wiki/Endianness">🤯 Endianness</a>,
+					suddenly it all makes sense!
 					<pre><code data-trim>
 								const (
 									ASYN            uint32 = 0x6173796E //nysa - asyn
@@ -310,7 +305,8 @@
 				<section>
 					<h3>Asyn</h3>
 					Here you will find
-					<span style="font-style: italic;">sbuf</span> which is a CMSampleBuffer class from Apple's CoreMedia
+					<span style="font-style: italic;">sbuf</span> which is a serialized CMSampleBuffer instance from
+					Apple's CoreMedia
 					Framework
 					<pre style="font-size:0.4em!important;"><code data-noescape data-trim>
 							00000000  d7 65 01 00 6e 79 73 61  60 2f c3 5c fb 7f 00 00  |.e..nysa`/.\....|
@@ -332,7 +328,7 @@
 					</code></pre>
 				</section>
 				<section>
-					<p>Let's try that same trick...</p>
+					<p>Let's try the same trick as before...</p>
 					<pre style="font-size:0.4em!important;"><code data-noescape data-trim>
 						00000090  74 61 64 73 <mark>00 00 00 1e</mark>  06 05 1a 47 56 4a dc 5c  |tads<mark>....</mark>...GVJ.\|
 						000000a0  4c 43 3f 94 ef c5 11 3c  d1 43 a8 01 ff cc cc ff  |LC?....<.C......|
@@ -346,12 +342,13 @@
 					<iframe width=100% height="300px" src="https://play.golang.org/p/g9EPDOCVUh2"></iframe>
 				</section>
 				<section>
-					<h3>So what is that then?</h3>
+					<h3>So what is format is the payload?</h3>
 					<pre style="font-size:0.4em!important;"><code data-noescape data-trim>
 					06051A47 564ADC5C 4C433F94 EFC5113C D143A801 FFCCCCFF 0201312D 0080
 				</code></pre>
-					Well, I knew it was h264, so I read a lot of documentation about it and it turned out
-					this is a h264 network abstraction layer unit (NALu)
+					After reading a lot of documentation, I realized the payload byte format matches that of a
+					h264
+					network abstraction layer unit (NALu)
 				</section>
 				<section>
 					I spare you all the details but essentially this will create a playable video file:
@@ -370,6 +367,7 @@
 								return nil
 							}
 					</code></pre>
+					<p style="font-size: 0.6em;">BTW: Good example for a delimiter based format 😌☝️ </p>
 					<aside data-markdown class="notes">
 						- I like how the io.Writer interface makes this code super testable
 					</aside>
@@ -416,7 +414,7 @@
 						var unsigned_eight_byte_integer uint64 = 24
 
 						//also, converting primitives back and forth
-						//is sooo elegant and simple
+						//is elegant and simple
 						var some_float float64 = 0.5
 						var float_as_uint64 uint64
 						float_as_uint64 = math.Float64bits(some_float)
@@ -471,16 +469,24 @@
 				</section>
 				<section>
 					<pre style="font-size:0.4em!important;"><code class="go" data-noescape data-trim>
-						func TestTbas(t *testing.T) {
-							dat, err := ioutil.ReadFile("fixtures/asyn-tbas")
+						func TestDecoder(t *testing.T) {
+							//read example message from golden file
+							//I created a separate file for every message there is
+							dat, err := ioutil.ReadFile("fixtures/asyn-msg")
 							if err != nil {
 								log.Fatal(err)
 							}
-							tbasPacket, err := packet.NewAsynTbasPacketFromBytes(dat)
+							
+							//call code under test
+							asynPacket, err := packet.NewAsynTbasPacketFromBytes(dat)
+							
+							//check that values are parsed correctly
+							//I got the correct values by reading the hexdump manually, only if
+							//my decoder is correct, they will be the same
 							if assert.NoError(t, err) {
-								assert.Equal(t, uint64(0x11123bc18), tbasPacket.ClockRef)
-								assert.Equal(t, uint64(0x1024490c0), tbasPacket.SomeOtherRef)
-								assert.Equal(t, "ASYN_TBAS{ClockRef:11123bc18, UnknownRef:1024490c0}", tbasPacket.String())
+								assert.Equal(t, uint64(0x11123bc18), asynPacket.ClockRef)
+								assert.Equal(t, uint64(0x1024490c0), asynPacket.SomeOtherRef)
+								assert.Equal(t, "ASYN_TBAS{ClockRef:11123bc18, UnknownRef:1024490c0}", asynPacket.String())
 							}
 						}
 						</code></pre>
@@ -494,13 +500,11 @@
 				</section>
 			</section>
 			<section>
-				<h3>Reverse Engineering helps you be creative</h3>
+				<h3>Reverse Engineering makes you a better engineer</h3>
 				<ul>
-					<li>Strategies for finding meaning in HexDumps</li>
-					<li>Writting clean, unit tested application code without knowing the end result</li>
-					<li>Networking basics</li>
-					<li>H264</li>
-					<li>GoUSB coding</li>
+					<li>Make Theories on how "they" built it, and test them one by one</li>
+					<li>Writing clean, unit tested application code without knowing the end result</li>
+					<li>Learn many cool new things like: networking basics, h264, USB coding</li>
 					<li><span style="font-style: italic">LowLevel</span>: There is <span
 							style="text-decoration: underline;">no</span> magic</li>
 				</ul>
@@ -528,17 +532,16 @@
 			</section>
 			<section>
 				<section>
-					<h4>You can implement it yourself using my documentation and test fixtures 🤓</h4>
+					<h3>Golang Reference Implementation 🤓</h3>
 					<ul style="font-size:0.6em!important">
-						<li>Easily modify for transcoding or RTP-Streaming video and/or audio</li>
+						<li>Very easy to modify for transcoding, RTP-Streaming, WebRTC etc.</li>
 						<li>No Windows support (yet?)</li>
 						<li>No MacOSX support (yet?)</li>
 					</ul>
 					<p>
 						<a style="font-size:0.6em!important"
 							href="https://github.com/danielpaulus/quicktime_video_hack">github.com/danielpaulus/quicktime_video_hack</a>
-						<a style="font-size:0.6em!important"
-							href="https://github.com/danielpaulus/quicktime_video_hack/blob/master/doc/">github.com/danielpaulus/quicktime_video_hack/blob/master/doc/</a>
+
 					</p>
 				</section>
 

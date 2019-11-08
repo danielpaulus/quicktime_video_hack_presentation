@@ -310,7 +310,7 @@
 				<section>
 					<h3>Asyn</h3>
 					Here you will find
-					<span style="font-style: italic;">sbuf</span> which is a CMSampleBuffer class from Apples CoreMedia
+					<span style="font-style: italic;">sbuf</span> which is a CMSampleBuffer class from Apple's CoreMedia
 					Framework
 					<pre style="font-size:0.4em!important;"><code data-noescape data-trim>
 							00000000  d7 65 01 00 6e 79 73 61  60 2f c3 5c fb 7f 00 00  |.e..nysa`/.\....|
@@ -384,31 +384,22 @@
 					<h3>Usb Programming is super simple</h3>
 					<p style="font-size: 0.6em;"> (I ❤️ gousb package)</p>
 					<pre style="font-size:0.4em!important;"><code class="go" data-noescape data-trim>
-					//UsbDataReceiver should receive USB SYNC, ASYN and PING packets with the correct length and with the 4 bytes length removed.
-					type UsbDataReceiver interface {
-						ReceiveData(data []byte)
-						CloseSession()
-					}
-
-					inEndpoint, err := iface.InEndpoint(grabInBulk(iface.Setting))
+					ctx := gousb.NewContext()
+					devices, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
+						// this function is called for every device present.
+						// Returning true means the device should be opened.
+						return validDeviceChecker(desc)
+					})
+					device := devices[0]
+					conf, _ := device.Config(configIndex)
+					iface, _ := conf.Interface(confNum, altSettingIndex)
+					inEndpoint, _ := iface.InEndpoint(grabInboundBulkEndpoint(iface.Setting))
+					outEndpoint, _ := iface.OutEndpoint(grabOutboundBulkEndpoint(iface.Setting))
 					stream, _ := inEndpoint.NewStream(4096, 5)
-					go func() {
-
-						frameExtractor := NewLengthFieldBasedFrameExtractor()
-						for {
-							buffer := make([]byte, 65536)
-				
-							n, err := stream.Read(buffer)
-							if err != nil {
-								log.Error("couldn't read bytes", err)
-								return
-							}
-							frame, isCompleteFrame := frameExtractor.ExtractFrame(buffer[:n])
-							if isCompleteFrame {
-								receiver.ReceiveData(frame)
-							}
-						}
-					}()
+					buffer := make([]byte, 65536)
+					stream.Read(buffer)
+					//do things with the buffer contents...
+					outEndpoint.Write([]byte{1,2,3,4})
 				</code></pre>
 					<aside data-markdown class="notes">
 						- my whole usb code is like 150 LOC and that includes comments and error handling
@@ -416,7 +407,24 @@
 				</section>
 				<section>
 					<h3>You have signed and unsigned primitives</h3>
+					<pre style="font-size:0.4em!important;"><code class="go" data-noescape data-trim>
+						//you have unsigned ints for every byte size,
+						//makes the java developer in me wanna cry out of happiness
+						var unsigned_one_byte_integer uint8 = 3
+						var unsigned_two_byte_integer uint16 = 6
+						var unsigned_four_byte_integer uint32 = 12
+						var unsigned_eight_byte_integer uint64 = 24
 
+						//also, converting primitives back and forth
+						//is sooo elegant and simple
+						var some_float float64 = 0.5
+						var float_as_uint64 uint64
+						float_as_uint64 = math.Float64bits(some_float)
+						binary.LittleEndian.PutUint64(someByteArray, float_as_uint64)
+						</code></pre>
+					<aside data-markdown="" class="notes">
+						- doing things like this in java (and i have done that), without a framework will drive you mad
+					</aside>
 				</section>
 				<section>
 					<h3>Working with networking and byte slices is soooo cool</h3>

@@ -84,25 +84,52 @@
 			</section>
 			<section>
 				<section>
-					<p>So basically we have two attack vectors for finding out how this works:</p>
+					<p>Usually you have two ways of finding out how these things work:</p>
 				</section>
 				<section>
-					<p>1. Use a disassembler and try to understand
+					<h3>1. Try and understand from the code</h3>
+					<p>Disassemble the binary and try to understand it
 						using static analysis and a debugger</p>
 					<pre
-						style="white-space: pre-wrap;">/System/Library/Frameworks/CoreMediaIO.framework/Versions/A/Resources/iOSScreenCapture.plugin/Contents/Resources/iOSScreenCaptureAssistant</pre>
-				</section>
-
-				<section>
-					2. Get a dump of USB communication, and just try to figure out the binary format with it
-					<pre><code data-trim>sudo ifconfig XHC20 up</code></pre>
-					<img style="width:150px" src="img/1024px-Wireshark_icon.png" />
+						style="font-size:0.4em;white-space: pre-wrap;">/System/Library/Frameworks/CoreMediaIO.framework/Versions/A/Resources/iOSScreenCapture.plugin/Contents/Resources/iOSScreenCaptureAssistant</pre>
 					<aside data-markdown class="notes">
+						- Wait you said we do not have the source code? Well we dont but when software is compiled, it
+						is translated into somethin a machine can understand. With good tooling, we can revert that
+						process to a certain degreee.
+						How well that works depends A LOT on the programming language that was used originally and if
+						obfuscation was used
+						- and actually if you do decompile the binary there are a few interesting things in there that
+						might even help us, but enough for that
+					</aside>
+				</section>
+				<section>
+					<h3>What is a disassembler?</h3>
+				</section>
+				<section>
+					It will try to create C-like code or plain ASM from a compiled piece of code
+					<img src="img/asm_example.png" /> </section>
+				<section>
+					2. Eavesdrop on the communication (USB in this particular case)
+					<aside data-markdown class="notes">
+						- we treat the system that we want to reverse engineer as a black box, and try to figure out how
+						it works just by looking at what data is being transferred
+						- in this particular case, it turned out to be the easier option, but that depends, if they use
+						encryption or some weird compression(and sometimes they do),
+						this may not be feasible that easily
 						- Using this command you can get a dump of everything that is going on on your USB device and
 						use all the cool wireshark filters
 					</aside>
 				</section>
 				<section>
+					Luckily, this is very easy and cheap nowadays on MacOSX
+					<pre><code data-trim>sudo ifconfig XHC20 up</code></pre>
+					<img style="width:150px" src="img/1024px-Wireshark_icon.png" />
+					<aside data-markdown class="notes">
+						- Pretty surprising that there is something for macos that is actually cheap
+					</aside>
+				</section>
+				<section>
+					<h3>Similar Problem, different Perspective</h3>
 					Lets assume you want to reverse engineer a REST API, what would you rather do?
 				</section>
 				<section>
@@ -122,7 +149,17 @@
 			</section>
 			<section>
 				<section>
-					We see strings, which is good but they make no sense 🤔
+					So I open Wireshark, start playing a video, stop playing the video and save the capture. <span
+						style="font-style: italic; background: #ff00!important;">USB may
+						work with packets</span>
+					but I assume that the data is sent as a stream of some kind of media samples, so I write a little
+					python
+					script
+					to extract and save all bytes received and sent in a separate file.
+					<h4>AND THEN...</h4>
+				</section>
+				<section>
+					<h3>I get this 🤔</h3>
 					<pre style="font-size:0.4em!important; font-family: 'Sans Mono', 'Consolas', 'Courier', monospace"><code  data-trim>
 							00000000  10 00 00 00 67 6e 69 70  00 00 00 00 01 00 00 00  |....gnip........|
 							00000010  10 00 00 00 67 6e 69 70  00 00 00 00 01 00 00 00  |....gnip........|
@@ -134,7 +171,11 @@
 							00000070  04 00 00 00 01 00 00 00  04 00 00 00 02 00 00 00  |................|
 							00000080
 					</code></pre>
-
+					<aside data-markdown="" class="notes">
+						- How the hell do make anything out of this? You see some strings, but they seem weird and
+						googling them wont help you much (maybe now you can find my slides :-D)
+						- Ok, keep calm, first let's think
+					</aside>
 
 				</section>
 				<section>
@@ -143,51 +184,317 @@
 					</h4>
 					<ol>
 						<li>Fixed Length</li>
-						<li> 4 byte Int containing length + Payload of that length</li>
 						<li> Delimiter-based messages</li>
+						<li> 4 byte Int containing length + Payload of that length</li>
 					</ol>
-					<aside>
+					<aside data-markdown class="">
 						whenever you call tcpConnection.Read() you never know how many bytes you will receive, this is
 						true for any programming language
 					</aside>
 				</section>
 				<section>
-					So let's try fixed length.. no, delimiter based? not really.. 4 byte length.. hmm
+					<p>So let's try fixed length.. </p>
+					<pre style="font-size:0.4em!important; font-family: 'Sans Mono', 'Consolas', 'Courier', monospace"><code  data-trim>
+							00000000  10 00 00 00 67 6e 69 70  00 00 00 00 01 00 00 00  |....gnip........|
+							00000010  10 00 00 00 67 6e 69 70  00 00 00 00 01 00 00 00  |....gnip........|
+							00000020  24 00 00 00 63 6e 79 73  01 00 00 00 00 00 00 00  |$...cnys........|
+							00000030  61 70 77 63 40 ae d5 18  01 00 00 00 b0 57 8d 19  |apwc@........W..|
+							00000040  01 00 00 00 44 00 00 00  63 6e 79 73 40 15 e1 5c  |....D...cnys@..\|
+							00000050  fb 7f 00 00 74 6d 66 61  90 4d af 18 01 00 00 00  |....tmfa.M......|
+							00000060  00 00 00 00 00 70 e7 40  6d 63 70 6c 4c 00 00 00  |.....p.@mcplL...|
+							00000070  04 00 00 00 01 00 00 00  04 00 00 00 02 00 00 00  |................|
+							00000080
+					</code></pre>
+					<aside data-markdown="" class="notes">
+						- also it seems like unreasonable to assume fixed length, given that media samples are probably
+						of different sizes, some pictures use more storage than others
+					</aside>
+				</section>
+				<section>
+					<p>So let's try delimiter based.. </p>
+					<pre style="font-size:0.4em!important; font-family: 'Sans Mono', 'Consolas', 'Courier', monospace"><code  data-trim>
+								00000000  10 00 00 00 67 6e 69 70  00 00 00 00 01 00 00 00  |....gnip........|
+								00000010  10 00 00 00 67 6e 69 70  00 00 00 00 01 00 00 00  |....gnip........|
+								00000020  24 00 00 00 63 6e 79 73  01 00 00 00 00 00 00 00  |$...cnys........|
+								00000030  61 70 77 63 40 ae d5 18  01 00 00 00 b0 57 8d 19  |apwc@........W..|
+								00000040  01 00 00 00 44 00 00 00  63 6e 79 73 40 15 e1 5c  |....D...cnys@..\|
+								00000050  fb 7f 00 00 74 6d 66 61  90 4d af 18 01 00 00 00  |....tmfa.M......|
+								00000060  00 00 00 00 00 70 e7 40  6d 63 70 6c 4c 00 00 00  |.....p.@mcplL...|
+								00000070  04 00 00 00 01 00 00 00  04 00 00 00 02 00 00 00  |................|
+								00000080
+						</code></pre>
+					<p class="fragment">Good example, log messages delimited with "\n"</p>
+					<aside data-markdown="" class="notes">
+						- also it seems like unreasonable to assume delimiter based, I guess for video decoding it's
+						nice to know beforehand how big of a buffer you need for the upcoming data
+					</aside>
+				</section>
+				<section>
+					<p>So let's try 4 byte length based.. </p>
+					<pre style="font-size:0.4em!important;"><code data-noescape data-trim>
+									00000000  <mark>10 00 00 00</mark> <mark style="background-color:#ff0000 ;">67 6e 69 70  00 00 00 00 01 00 00 00</mark>  |<mark>....</mark><mark style="background-color:#ff0000 ;">gnip........</mark>|
+									00000010  10 00 00 00 67 6e 69 70  00 00 00 00 01 00 00 00  |....gnip........|
+									00000020  24 00 00 00 63 6e 79 73  01 00 00 00 00 00 00 00  |$...cnys........|
+									00000030  61 70 77 63 40 ae d5 18  01 00 00 00 b0 57 8d 19  |apwc@........W..|
+									00000040  01 00 00 00 44 00 00 00  63 6e 79 73 40 15 e1 5c  |....D...cnys@..\|
+							</code></pre>
+
+
+					<iframe width="100%" height="250px" src="https://play.golang.org/p/os-72d8SFSJ"></iframe>
+					<aside data-markdown="" class="notes">
+						If we look at this pattern, it seems to work really well, so writing a go parser to extract
+						frames by using
+						4byte lengthes is super easy.
+						```
+						package main
+
+						import (
+						"fmt"
+						"encoding/binary"
+						)
+
+						func main() {
+						valLE := binary.LittleEndian.Uint32([]byte{0x24,0x00,0x00,0x00})
+						valBE := binary.BigEndian.Uint32([]byte{0x10,0x00,0x00,0x00})
+						fmt.Printf("Little Endian:%d \nBigEndian:%d",valLE, valBE)
+						}
+
+						```
+					</aside>
+
+					<aside data-markdown="" class="notes">
+						- also it seems like unreasonable to assume delimiter based, I guess for video decoding it's
+						nice to know beforehand how big of a buffer you need for the upcoming data
+					</aside>
+				</section>
+				<section>
+					<p>We have the frames, but still the strings don't make sense</p>
+					<pre style="font-size:0.4em!important; font-family: 'Sans Mono', 'Consolas', 'Courier', monospace"><code  data-trim>
+							00000000  10 00 00 00 67 6e 69 70  00 00 00 00 01 00 00 00  |....gnip........|
+					</code></pre>
+					<iframe width=100% height="300px" src="https://play.golang.org/p/2Jv9okeAaUr"></iframe>
+				</section>
+				<section>
+					<a href="https://en.wikipedia.org/wiki/Endianness">Endianness</a>
+					🤯 Suddenly it all makes sense!
+					<pre><code data-trim>
+								const (
+									ASYN            uint32 = 0x6173796E //nysa - asyn
+									FEED            uint32 = 0x66656564 //deef - feed  
+									RELS            uint32 = 0x72656C73
+									HPD1            uint32 = 0x68706431 //hpd1 - 1dph | For specifying/requesting the video format
+									HPA1            uint32 = 0x68706131 //hpa1 - 1aph | For specifying/requesting the audio format
+									NEED            uint32 = 0x6E656564 //need - deen
+									EAT             uint32 = 0x65617421 //contains audio sbufs		
+									KeyValuePairMagic uint32 = 0x6B657976 //keyv - vyek
+									StringKey         uint32 = 0x7374726B //strk - krts
+									IntKey            uint32 = 0x6964786B //idxk - kxdi
+									BooleanValueMagic uint32 = 0x62756C76 //bulv - vlub
+									DictionaryMagic   uint32 = 0x64696374 //dict - tcid
+									DataValueMagic    uint32 = 0x64617476 //datv - vtad
+									StringValueMagic  uint32 = 0x73747276 //strv - vrts
+								)</code></pre>
 				</section>
 			</section>
 
-			<section>
-				<a href="https://en.wikipedia.org/wiki/Endianness">Endianness</a>
-				🤯 Suddenly it all makes sense!
-				<pre><code data-trim>
-						//Async Packet types
-						const (
-							AsynPacketMagic uint32 = 0x6173796E //nysa - asyn
-							FEED            uint32 = 0x66656564 //deef - feed  
-							TJMP            uint32 = 0x746A6D70 //pmjt - tjmp
-							SRAT            uint32 = 0x73726174 
-							SPRP            uint32 = 0x73707270 // Set Property
-							TBAS            uint32 = 0x74626173 //TimeBase 
-							RELS            uint32 = 0x72656C73
-							HPD1            uint32 = 0x68706431 //hpd1 - 1dph | For specifying/requesting the video format
-							HPA1            uint32 = 0x68706131 //hpa1 - 1aph | For specifying/requesting the audio format
-							NEED            uint32 = 0x6E656564 //need - deen
-							EAT             uint32 = 0x65617421 //contains audio sbufs
-
-						)</code></pre>
-			</section>
-			<section>
-				First Prototype in Java, Why use go?
-			</section>
 
 			<section>
-				How do you unit test this?
+				<section>
+					<h3>Going through the hexdump you'll find</h3>
+					Ping, Asyn, Sync and Rply
+				</section>
+				<section>
+					<h3>Ping</h3>
+					Boring, just for saying hello
+				</section>
+				<section>
+					<h3>Asyn</h3>
+					Here you will find
+					<span style="font-style: italic;">sbuf</span> which is a CMSampleBuffer class from Apple's CoreMedia
+					Framework
+					<pre style="font-size:0.4em!important;"><code data-noescape data-trim>
+							00000000  d7 65 01 00 6e 79 73 61  60 2f c3 5c fb 7f 00 00  |.e..nysa`/.\....|
+							00000010  64 65 65 66 c3 65 01 00  <mark>66 75 62 73</mark> 20 00 00 00  |deef.e..<mark>fubs</mark> ...|
+							00000020  73 74 70 6f 68 54 8d 40  3b 57 00 00 00 ca 9a 3b  |stpohT.@;W.....;|
+							00000030  01 00 00 00 00 00 00 00  00 00 00 00 50 00 00 00  |............P...|
+							00000040  61 69 74 73 01 00 00 00  00 00 00 00 3c 00 00 00  |aits........<...|
+							00000050  01 00 00 00 00 00 00 00  00 00 00 00 68 54 8d 40  |............hT.@|
+							00000060  3b 57 00 00 00 ca 9a 3b  01 00 00 00 00 00 00 00  |;W.....;........|
+							00000070  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+							00000080  00 00 00 00 00 00 00 00  00 00 00 00 86 62 01 00  |.............b..|
+							00000090  <mark>74 61 64 73</mark> 00 00 00 1e  06 05 1a 47 56 4a dc 5c  |<mark>tads</mark>.......GVJ.\|
+							000000a0  4c 43 3f 94 ef c5 11 3c  d1 43 a8 01 ff cc cc ff  |LC?....<.C......|
+							000000b0  02 01 31 2d 00 80 00 01  62 58 25 b8 20 07 ff f0  |..1-....bX%. ...|
+							000000c0  84 35 2d 02 55 ff 03 5b  4d cd b6 1a 16 09 f1 5d  |.5-.U..[M......]|
+							000000d0  46 bf ea 3e 4d 0e 0c e4  6d 84 5a 00 00 03 00 00  |F..>M...m.Z.....|
+							000000e0  03 00 00 03 00 01 42 bc  53 80 bf d1 d8 3b 47 e0  |......B.S....;G.|
+							000000f0  21 61 98 83 c3 d1 62 92  4f 0f 67 7f 4a 6b 10 6a  |!a....b.O.g.Jk.j|
+					</code></pre>
+				</section>
+				<section>
+					<p>Let's try that same trick...</p>
+					<pre style="font-size:0.4em!important;"><code data-noescape data-trim>
+						00000090  74 61 64 73 <mark>00 00 00 1e</mark>  06 05 1a 47 56 4a dc 5c  |tads<mark>....</mark>...GVJ.\|
+						000000a0  4c 43 3f 94 ef c5 11 3c  d1 43 a8 01 ff cc cc ff  |LC?....<.C......|
+						000000b0  02 01 31 2d 00 80 <mark>00 01  62 58</mark> 25 b8 20 07 ff f0  |..1-....bX%. ...|
+						000000c0  84 35 2d 02 55 ff 03 5b  4d cd b6 1a 16 09 f1 5d  |.5-.U..[M......]|
+						000000d0  46 bf ea 3e 4d 0e 0c e4  6d 84 5a 00 00 03 00 00  |F..>M...m.Z.....|
+						000000e0  03 00 00 03 00 01 42 bc  53 80 bf d1 d8 3b 47 e0  |......B.S....;G.|
+						000000f0  21 61 98 83 c3 d1 62 92  4f 0f 67 7f 4a 6b 10 6a  |!a....b.O.g.Jk.j|
+						</code></pre>
+
+					<iframe width=100% height="300px" src="https://play.golang.org/p/g9EPDOCVUh2"></iframe>
+				</section>
+				<section>
+					<h3>So what is that then?</h3>
+					<pre style="font-size:0.4em!important;"><code data-noescape data-trim>
+					06051A47 564ADC5C 4C433F94 EFC5113C D143A801 FFCCCCFF 0201312D 0080
+				</code></pre>
+					Well, I knew it was h264, so I read a lot of documentation about it and it turned out
+					this is a h264 network abstraction layer unit (NALu)
+				</section>
+				<section>
+					I spare you all the details but essentially this will create a playable video file:
+					<pre style="font-size:0.4em!important;"><code class="golang" data-noescape data-trim>
+							var startCode = []byte{00, 00, 00, 01}
+
+							func (avfw AVFileWriter) writeNalu(naluBytes []byte) error {
+								_, err := avfw.h264FileWriter.Write(startCode)
+								if err != nil {
+									return err
+								}
+								_, err = avfw.h264FileWriter.Write(naluBytes)
+								if err != nil {
+									return err
+								}
+								return nil
+							}
+					</code></pre>
+					<aside data-markdown class="notes">
+						- I like how the io.Writer interface makes this code super testable
+					</aside>
+				</section>
+			</section>
+			<section>
+				<section>
+					<h3>First Prototype was written in Java, Why use go?</h3>
+					<img style=" background:none; border:none; box-shadow:none;" src="img/gopher-dance-long-3x.gif" />
+				</section>
+				<section>
+					<h3>Usb Programming is super simple</h3>
+					<p style="font-size: 0.6em;"> (I ❤️ gousb package)</p>
+					<pre style="font-size:0.4em!important;"><code class="go" data-noescape data-trim>
+					ctx := gousb.NewContext()
+					devices, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
+						// this function is called for every device present.
+						// Returning true means the device should be opened.
+						return validDeviceChecker(desc)
+					})
+					device := devices[0]
+					conf, _ := device.Config(configIndex)
+					iface, _ := conf.Interface(confNum, altSettingIndex)
+					inEndpoint, _ := iface.InEndpoint(grabInboundBulkEndpoint(iface.Setting))
+					outEndpoint, _ := iface.OutEndpoint(grabOutboundBulkEndpoint(iface.Setting))
+					stream, _ := inEndpoint.NewStream(4096, 5)
+					buffer := make([]byte, 65536)
+					stream.Read(buffer)
+					//do things with the buffer contents...
+					outEndpoint.Write([]byte{1,2,3,4})
+				</code></pre>
+					<aside data-markdown class="notes">
+						- my whole usb code is like 150 LOC and that includes comments and error handling
+					</aside>
+				</section>
+				<section>
+					<h3>You have signed and unsigned primitives</h3>
+					<pre style="font-size:0.4em!important;"><code class="go" data-noescape data-trim>
+						//you have unsigned ints for every byte size,
+						//makes the java developer in me wanna cry out of happiness
+						var unsigned_one_byte_integer uint8 = 3
+						var unsigned_two_byte_integer uint16 = 6
+						var unsigned_four_byte_integer uint32 = 12
+						var unsigned_eight_byte_integer uint64 = 24
+
+						//also, converting primitives back and forth
+						//is sooo elegant and simple
+						var some_float float64 = 0.5
+						var float_as_uint64 uint64
+						float_as_uint64 = math.Float64bits(some_float)
+						binary.LittleEndian.PutUint64(someByteArray, float_as_uint64)
+						</code></pre>
+					<aside data-markdown="" class="notes">
+						- doing things like this in java (and i have done that), without a framework will drive you mad
+					</aside>
+				</section>
+				<section>
+					<h3>Working with networking and byte slices is soooo cool</h3>
+				</section>
+				<section>
+					<h3>You can even write and read structs directly from byte streams (like in C)</h3>
+				</section>
+			</section>
+			<section>
+				<section>
+					<h3>How do you unit test this?</h3>
+				</section>
+				<section>
+					I recommend using golden file like approaches for the codec
+				</section>
+				<section>
+					<pre style="font-size:0.4em!important;"><code class="golang" data-noescape data-trim>
+						func TestTbas(t *testing.T) {
+							dat, err := ioutil.ReadFile("fixtures/asyn-tbas")
+							if err != nil {
+								log.Fatal(err)
+							}
+							tbasPacket, err := packet.NewAsynTbasPacketFromBytes(dat)
+							if assert.NoError(t, err) {
+								assert.Equal(t, uint64(0x11123bc18), tbasPacket.ClockRef)
+								assert.Equal(t, uint64(0x1024490c0), tbasPacket.SomeOtherRef)
+								assert.Equal(t, "ASYN_TBAS{ClockRef:11123bc18, UnknownRef:1024490c0}", tbasPacket.String())
+							}
+						}
+						</code></pre>
+					<aside data-markdown class="notes">
+						- If want to implement this in another language, start by writing tests like this one for every
+						packet and data type.
+						- you can copy my tests easily
+						- this gives you a rock solid foundation and the the remaining few usb code pieces will be very
+						simple
+					</aside>
+				</section>
+			</section>
+			<section>
+				<h3>Reverse Engineering helps you be creative</h3>
+				<ul>
+					<li>Strategies for finding meaning in HexDumps</li>
+					<li>Networking basics</li>
+					<li>H264</li>
+					<li>GoUSB coding</li>
+					<li><span style="font-style: italic">LowLevel</span>: There is <span
+							style="text-decoration: underline;">no</span> magic</li>
+				</ul>
+				<aside data-markdown class="notes">
+					- RE teaches you how to think in a reverse way, you learn or know through XP how things are
+					implemented usually
+					- With this knowledge you try to go back to the original code just by being a little clever
+					- you have to write your own tools to get the job done, you have to read and learn a lot about a
+					system to understand it
+					- if you wanna know more ask me later
+				</aside>
 			</section>
 			<section>
 				<h3>Demo 🤗 🤩 </h3>
 				<iframe width="560" height="315" src="https://www.youtube.com/embed/8v5f_ybSjHk" frameborder="0"
 					allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
 					allowfullscreen></iframe>
+				<aside data-markdown class="notes">
+					- I tried implementing an RTP stream to stream to a local GStreamer process, that failed
+					- Now I use CGO to push AV data directly into Gstreamer, but that would be out of scope now
+					- The cool thing is that the project is super extensible because of thing, transcoding, send video
+					and audio separately
+					- RTP, WebRTC is really just changing 2 or 3 lines of code to modify the gstreamer pipeline
+				</aside>
 			</section>
 			<section>
 				<section>
@@ -206,7 +513,17 @@
 				</section>
 
 				<section>
-					<p>ask me all the questions</p>& thx for listening
+					<h3>ask me</h3>
+					<ul>
+						<li> all the questions</li>
+						<li> about jobs at a place where people do cool stuff like this</li>
+					</ul>
+
+					<p>& thx for listening</p>
+					<aside data-markdown class="notes">
+						- Not all people are reverse engineering things at sauce, we have java backend, go development,
+						frontend development,
+					</aside>
 				</section>
 			</section>
 

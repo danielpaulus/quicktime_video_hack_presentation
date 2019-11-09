@@ -84,7 +84,7 @@
 			</section>
 			<section>
 				<section>
-					<p>Usually you have two ways of finding out how these things work:</p>
+					<p>Usually you have two ways of finding out how these features work:</p>
 				</section>
 				<section>
 					<h3>1. Try and understand from the code</h3>
@@ -353,10 +353,10 @@
 				<section>
 					I spare you all the details but essentially this will create a playable video file:
 					<pre style="font-size:0.4em!important;"><code class="golang" data-noescape data-trim>
-							var startCode = []byte{00, 00, 00, 01}
+							var delimiter = []byte{00, 00, 00, 01}
 
 							func (avfw AVFileWriter) writeNalu(naluBytes []byte) error {
-								_, err := avfw.h264FileWriter.Write(startCode)
+								_, err := avfw.h264FileWriter.Write(delimiter)
 								if err != nil {
 									return err
 								}

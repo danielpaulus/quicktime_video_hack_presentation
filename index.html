@@ -18,6 +18,8 @@
 			background: url(https://www.github.com/favicon.ico) no-repeat left center;
 			padding-left: 38px;
 		}
+
+
 	</style>
 	<!-- Printing and PDF exports -->
 	<script>
@@ -34,8 +36,10 @@
 	<div class="reveal">
 		<div class="slides">
 			<section>
-				<h4>Daniel Paulus, Senior Software Engineer at Sauce-RDC</h4>
-				<img src="img/saucebot_desk.png" style="width:250px;" />
+				<h4><s>Daniel Paulus, Senior Software Engineer at Sauce-RDC</s></h4>
+				<h4>Daniel Paulus, Engineering Manager at Contentful 🥳</h4>
+				
+				<img src="img/contentful_logo.webp" style="width:250px;" />
 				<aside data-markdown class="notes">
 					- I am Daniel, I was an AirForce Officer before joining Sauce and have a family with 4 kids here, I
 					study philosophy on the side and love challenging things
@@ -372,6 +376,9 @@
 						- I like how the io.Writer interface makes this code super testable
 					</aside>
 				</section>
+				<section>
+					Reminder: If nobody is sleeping yet, talk about <a href="https://github.com/danielpaulus/quicktime_video_hack/blob/master/doc/technical_documentation.md">reference documentation</a>
+				</section>
 			</section>
 			<section>
 				<section>
@@ -531,12 +538,63 @@
 				</aside>
 			</section>
 			<section>
+			<section>
+				<h3>Bonus Content: GStreamer</h3>
+			</section>
+			<section>
+				<p><a href="https://gstreamer.freedesktop.org/">Gstreamer</a> - an extensible, open source multimedia framework with nice pipeline approach which is available for almost all platforms and lanuages</p>
+				<img height="100px" src="img/gstreamer.svg"/>
+			</section>
+			<section>
+				<h3>Build/Debug your pipeline using the shell.. </h3>
+				<pre><code data-trim>
+					gst-launch-1.0 filesrc location=music.mp3 !
+					mpegaudioparse ! mpg123audiodec ! audioconvert !
+					audioresample ! pulsesink</code></pre>
+					<pre><code data-trim>
+					gst-launch-1.0 v4l2src !
+					video/x-raw,width=128,height=96,format=UYVY ! videoconvert !
+					ffenc_h263 ! video/x-h263 ! rtph263ppay pt=96 ! 
+					udpsink host=192.168.1.1 port=5000
+				</code></pre>
+			</section>
+			<section>
+				<h3>.. or build it using code</h3>
+				<pre><code data-trim>
+const gstreamer = require('gstreamer-superficial');
+const pipeline = new gstreamer.Pipeline(`videotestsrc ! 
+textoverlay name=text ! autovideosink`);
+	
+pipeline.play();
+				</code></pre>
+			</section>	<section>
+				<h3>You can also grab binary data from an existing pipeline or feed data into one :-D</h3>
+				<pre><code data-trim>
+const appsink = pipeline.findChild('sink');
+function onData(buf, caps) {
+	if (caps) {
+		console.log('CAPS', caps);
+	}
+	if (buf) {
+		console.log('BUFFER size', buf.length);
+		appsink.pull(onData);
+	}
+
+	// !buf probably means EOS
+}
+appsink.pull(onData);
+				</code>
+				</pre>
+			</section>
+			
+		</section>
+			<section>
 				<section>
 					<h3>Golang Reference Implementation 🤓</h3>
 					<ul style="font-size:0.6em!important">
+						<li>Works on Mac and Linux</li>
 						<li>Very easy to modify for transcoding, RTP-Streaming, WebRTC etc.</li>
 						<li>No Windows support (yet?)</li>
-						<li>No MacOSX support (yet?)</li>
 					</ul>
 					<p>
 						<a style="font-size:0.6em!important"
@@ -549,7 +607,7 @@
 					<h3>ask me</h3>
 					<ul>
 						<li> all the questions</li>
-						<li> about jobs at a place where people do cool stuff like this</li>
+						<li><s>about jobs at a place where people do cool stuff like this</s>(I work at a way cooler company now where people build way cooler stuff)</li>
 					</ul>
 
 					<p>& thx for listening</p>
